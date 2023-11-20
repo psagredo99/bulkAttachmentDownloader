@@ -23,8 +23,6 @@ def create_filename(title, record_id, parent_id):
     clean_title = filter(lambda i: i not in bad_chars, title)
     clean_title = ''.join(list(clean_title))
     
-    #filename2 = "{0}{1}-{2}".format(attName, record_id, clean_title)
-
     filename = "{0}-ID-{1}-ParentId-{2}".format(clean_title, record_id, parent_id)
     return filename
 
@@ -122,7 +120,7 @@ def download_attachment(args):
 
 
 def fetch_files(sf, query_string, output_directory, object_type, valid_record_ids=None, batch_size=100):
-    # Divide the full list of files into batches of 100 ids
+    # Divide the full list of files into batches of 100 ids to avoid overlaping
     batches = list(split_into_batches(valid_record_ids, batch_size))
 
     i = 0
@@ -135,12 +133,6 @@ def fetch_files(sf, query_string, output_directory, object_type, valid_record_id
         print('########################################################################')
         print('########################################################################')
         print('\t*DESCARGA DE ARCHIVOS EN PROCESO*\n')
-
-        '''
-        QRY CON PETES--> SELECT Id, ContentType, Description, Name, OwnerId, ParentId 
-                         FROM Attachment 
-                         WHERE Id in ('00P7U000007baOhUAI','00P7U000007KjeYUAS','00P7U000007txDoUAI','00P7U000007dyMIUAY','00P7U000007oQpzUAE')
-        '''
 
         # MODIFIED
         with alive_bar(spinner="waves") as bar:
