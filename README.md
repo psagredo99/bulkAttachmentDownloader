@@ -1,5 +1,7 @@
 # Bulk Attachment Downloader
 
+|Author:Pablo Sagredo
+
 Bulk Attachment Downloader is a Python script that utilizes Salesforce Bulk API to efficiently download attachments and notes based on SOQL queries. This tool is designed to streamline the process of exporting attachments and notes from Salesforce.
 
 ![Preview](https://github.com/psagredo99/bulkAttachmentDownloader/assets/72439144/e56c56fb-3987-4d1c-966e-015be401f0d3)
@@ -20,3 +22,25 @@ Bulk Attachment Downloader is a Python script that utilizes Salesforce Bulk API 
    ```bash
    git clone https://github.com/psagredo99/bulkAttachmentDownloader.git
    cd bulkAttachmentDownloader
+2. **Install requirements:**
+
+   ```bash
+   pip install -r requirements.txt
+3. **Configure Salesforce credentials and settings in download.ini:**
+   ```bash
+   [salesforce]
+   username = YOUR_SALESFORCE_USERNAME
+   password = YOUR_SALESFORCE_PASSWORD
+   security_token = YOUR_SECURITY_TOKEN
+   connect_to_sandbox = True  # Set to False for production
+   download_attachments = True
+   download_notes = True
+   batch_size = 100 #Care for big amount of attachments as SF will timeout F.E. 10k batch size
+   loglevel = INFO
+   sharetype = YOUR_SHARE_TYPE
+   visibility = YOUR_VISIBILITY
+
+4. **Run script:**
+
+   ```bash
+   python download.py -q "your query for ids" 
