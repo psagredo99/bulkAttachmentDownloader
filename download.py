@@ -17,18 +17,18 @@ def split_into_batches(items, batch_size):
         yield full_list[i:i + batch_size]
 
 
-def create_filename(title, record_id, attName):
+def create_filename(title, record_id, parent_id):
     # Create filename
     bad_chars = [';', ':', '!', "*", '/', '\\', ' ', ',','?','>','<']
     clean_title = filter(lambda i: i not in bad_chars, title)
     clean_title = ''.join(list(clean_title))
     
-    filename = "{0}{1}-{2}".format(attName, record_id, clean_title)
+    #filename2 = "{0}{1}-{2}".format(attName, record_id, clean_title)
+
+    filename = "{0}-ID-{1}-ParentId-{2}".format(clean_title, record_id, parent_id)
     return filename
 
     
-
-
 ATTACHMENT = 'attachment'
 NOTE = 'note'
 
@@ -48,7 +48,7 @@ def get_record_ids(sf, output_directory, query, object_type, sharetype='V', visi
 
     #################-TEST BULK START-##########
     record_ids = set()
-    query = 'SELECT Id, ContentType, Description, Name, OwnerId, ParentId, CreatedById, CreatedDate, LastModifiedDate FROM Attachment WHERE parentId IN (SELECT id FROM Registro__c WHERE CALENDAR_MONTH(CreatedDate) =10 AND CALENDAR_YEAR(CreatedDate) =2022) LIMIT 5'
+    query = 'SELECT Id, ContentType, Description, Name, OwnerId, ParentId, CreatedById, CreatedDate, LastModifiedDate FROM Attachment WHERE parentId IN (SELECT id FROM Registro__c WHERE CALENDAR_MONTH(CreatedDate) =10 AND CALENDAR_YEAR(CreatedDate) =2022) LIMIT 10000'
     print('########################################################################')
     print('########################################################################')
     print('########################################################################')
@@ -81,15 +81,15 @@ def get_record_ids(sf, output_directory, query, object_type, sharetype='V', visi
             if object_type == ATTACHMENT:
                 filename = create_filename(content_document["Name"],
                                            content_document["Id"],
-                                           output_directory)
+                                           content_document["ParentId"])
                 file_writer.writerow(
                     [content_document["ParentId"], content_document["Id"], filename, filename,
                      content_document["Name"], content_document["OwnerId"], content_document['CreatedDate'],
                      content_document['CreatedById'], content_document['LastModifiedDate']])
             elif object_type == NOTE:
-                filename = create_filename(content_document["ParentId"] + '.txt',
+                filename = create_filename(content_document["Name"],
                                            content_document["Id"],
-                                           output_directory)
+                                           content_document["ParentId"])
                 file_writer.writerow(
                     [content_document["ParentId"], content_document["Id"], content_document["Title"],
                      content_document["OwnerId"], filename, content_document['CreatedDate'],
@@ -102,7 +102,8 @@ def get_record_ids(sf, output_directory, query, object_type, sharetype='V', visi
 def download_attachment(args):
     record, output_directory, sf = args
     # Create filename
-    filename = create_filename(record["Name"], record["Id"], output_directory)
+    filename = create_filename(record["Name"], record["Id"], record["ParentId"])
+
     url = "https://%s%s%s/body" % (sf.sf_instance, '/services/data/v57.0/sobjects/Attachment/', record["Id"])
     print('#|' +'\U00002705'+ 'RECORD ID -- ' + record["Id"] + ' -- Name -- '+ record["Name"] + ' -- ParentID -- ' + record["ParentId"])
 
@@ -134,40 +135,44 @@ def fetch_files(sf, query_string, output_directory, object_type, valid_record_id
         print('########################################################################')
         print('########################################################################')
         print('\t*DESCARGA DE ARCHIVOS EN PROCESO*\n')
+
+        '''
+        QRY CON PETES--> SELECT Id, ContentType, Description, Name, OwnerId, ParentId 
+                         FROM Attachment 
+                         WHERE Id in ('00P7U000007baOhUAI','00P7U000007KjeYUAS','00P7U000007txDoUAI','00P7U000007dyMIUAY','00P7U000007oQpzUAE')
+        '''
+
+        # MODIFIED
+        with alive_bar(spinner="waves") as bar:
+            fetch_results = sf.bulk.Attachment.query_all(batch_query, lazy_operation=True)
+            bar()
         
-
-        fetch_results = sf.bulk.Attachment.query_all(batch_query, lazy_operation=True)
-    
-        records_to_process = []
+        records = []
         for list_results in fetch_results:
-            records_to_process.extend(list_results)
+            records.extend(list_results)
+        #END 
 
-
-        query_response = sf.query(batch_query)
-
-        records_to_process = len(query_response["records"])
-
-        logging.debug("{0} Query found {1} results".format(object_type, records_to_process))
+        logging.debug("{0} Query found {1} results".format(object_type, len(records)))
 
         extracted = 0
 
         if object_type == ATTACHMENT:
             #MULTI THREADS PARA VARIOS BATCHES
             with concurrent.futures.ProcessPoolExecutor() as executor:
-                args = ((record, output_directory, sf) for record in query_response["records"])
+                args = ((record, output_directory, sf) for record in records)
                 for result in executor.map(download_attachment, args):
                     logging.debug(result)
         elif object_type == NOTE:
-            for r in query_response["records"]:
-                filename = create_filename(r["Title"] + '.txt', r["Id"], output_directory)
+            for r in records:
+                filename = create_filename(r["Title"] , r["Id"], r["ParentId"])
                 with open(filename, "w") as output_file:
                     extracted += 1
                     if r["Body"]:
                         output_file.write(r["Body"])
-                        logging.debug("(%d/%d): Saved blob to %s " % (extracted, records_to_process, filename))
+                        logging.debug("(%d): Saved blob to %s " % (extracted, filename))
                     else:
                         output_file.write("")
-                        logging.debug("(%d/%d): Empty Body for %s" % (extracted, records_to_process, filename))
+                        logging.debug("(%d): Empty Body for %s" % (extracted, filename))
 
         logging.info('All files in batch {0} downloaded'.format(i))
     logging.info('All batches complete')
