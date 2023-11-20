@@ -43,4 +43,10 @@ Bulk Attachment Downloader is a Python script that utilizes Salesforce Bulk API 
 4. **Run script:**
 
    ```bash
-   python download.py -q "your query for ids" 
+   python download.py -q "your query for ids"
+
+## Author
+
+   **Author**: Pablo Sagredo
+   **Email**: pablo.sagredo@pkf-attest.es
+   **Date**: 15/11/2023
