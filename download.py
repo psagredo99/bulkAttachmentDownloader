@@ -46,7 +46,6 @@ def get_record_ids(sf, output_directory, query, object_type, sharetype='V', visi
 
     #################-TEST BULK START-##########
     record_ids = set()
-    query = 'SELECT Id, ContentType, Description, Name, OwnerId, ParentId, CreatedById, CreatedDate, LastModifiedDate FROM Attachment WHERE parentId IN (SELECT id FROM Registro__c WHERE CALENDAR_MONTH(CreatedDate) =10 AND CALENDAR_YEAR(CreatedDate) =2022) LIMIT 10000'
     print('########################################################################')
     print('########################################################################')
     print('########################################################################')
