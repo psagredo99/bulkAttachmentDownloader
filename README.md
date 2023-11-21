@@ -39,8 +39,8 @@ Bulk Attachment Downloader is a Python script that utilizes Salesforce Bulk API 
    sharetype = YOUR_SHARE_TYPE
    visibility = YOUR_VISIBILITY
 
-4. **Run script:**
-
+4. **Run script (Example query):**
+   -Query must retrieve parent ids of attachments.
    ```bash
    python download.py -q "SELECT id FROM EmailMessage WHERE HasAttachment = true"
    
